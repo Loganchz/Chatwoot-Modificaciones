@@ -76,8 +76,7 @@ RUN pnpm i
 
 COPY . /app
 
-# Ensure entrypoint scripts are executable
-RUN chmod +x /app/docker/entrypoints/*.sh
+RUN chmod -R +x /app/docker/entrypoints
 
 # creating a log directory so that image wont fail when RAILS_LOG_TO_STDOUT is false
 # https://github.com/chatwoot/chatwoot/issues/701

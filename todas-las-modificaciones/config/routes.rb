@@ -506,8 +506,6 @@ Rails.application.routes.draw do
               get :outgoing_messages_count
               get :first_contact_heatmaps
               get :first_contacts_summary
-              get :campaign_metrics
-              get :channel_metrics
             end
           end
 

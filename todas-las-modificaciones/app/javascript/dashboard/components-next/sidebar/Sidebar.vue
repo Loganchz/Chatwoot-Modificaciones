@@ -600,8 +600,8 @@ const menuItems = computed(() => {
           to: accountScopedRoute('account_overview_reports'),
         },
         {
-          name: 'Métricas de Plantillas',
-          label: 'Métricas de Plantillas',
+          name: 'Primeros Contactos',
+          label: 'Primeros Contactos',
           to: accountScopedRoute('first_contacts_reports'),
         },
         {

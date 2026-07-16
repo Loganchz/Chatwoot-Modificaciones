@@ -63,12 +63,12 @@ const state = {
       isFetchingFirstContactInboundChart: false,
       isFetchingFirstContactOutboundChart: false,
       isFetchingFirstContactsSummary: false,
-      isFetchingCampaignMetrics: false,
-      isFetchingChannelMetrics: false,
       isFetchingAgentConversationMetric: false,
 
 
       isFetchingTeamConversationMetric: false,
+      isFetchingChannelMetrics: false,
+      isFetchingCampaignMetrics: false,
     },
     accountConversationMetric: {},
     accountConversationHeatmap: [],
@@ -83,8 +83,8 @@ const state = {
       contacts_count: 0,
       conversations_count: 0
     },
+    channelMetrics: [],
     campaignMetrics: [],
-    channelMetrics: {},
   },
 };
 
@@ -130,12 +130,6 @@ const getters = {
   getFirstContactsSummary(_state) {
     return _state.overview.firstContactsSummary;
   },
-  getCampaignMetrics(_state) {
-    return _state.overview.campaignMetrics;
-  },
-  getChannelMetrics(_state) {
-    return _state.overview.channelMetrics;
-  },
   getAgentConversationMetric(_state) {
 
 
@@ -146,6 +140,12 @@ const getters = {
   },
   getOverviewUIFlags($state) {
     return $state.overview.uiFlags;
+  },
+  getChannelMetrics(_state) {
+    return _state.overview.channelMetrics;
+  },
+  getCampaignMetrics(_state) {
+    return _state.overview.campaignMetrics;
   },
 };
 
@@ -214,9 +214,6 @@ export const actions = {
       data = clampDataBetweenTimeline(data, reportObj.from, reportObj.to);
       commit('SET_INBOUND_CHART_DATA', data);
       commit('TOGGLE_INBOUND_CHART_LOADING', false);
-    }).catch(error => {
-      console.error("Error in InboundChart:", error);
-      commit('TOGGLE_INBOUND_CHART_LOADING', false);
     });
   },
   fetchFirstContactOutboundChart({ commit }, reportObj) {
@@ -225,9 +222,6 @@ export const actions = {
       let { data } = heatmapData;
       data = clampDataBetweenTimeline(data, reportObj.from, reportObj.to);
       commit('SET_OUTBOUND_CHART_DATA', data);
-      commit('TOGGLE_OUTBOUND_CHART_LOADING', false);
-    }).catch(error => {
-      console.error("Error in OutboundChart:", error);
       commit('TOGGLE_OUTBOUND_CHART_LOADING', false);
     });
   },
@@ -238,23 +232,27 @@ export const actions = {
       commit('TOGGLE_FIRST_CONTACTS_SUMMARY_LOADING', false);
     });
   },
-  fetchCampaignMetrics({ commit }, reportObj) {
-    commit('TOGGLE_CAMPAIGN_METRICS_LOADING', true);
-    Report.getCampaignMetrics(reportObj).then(res => {
-      commit('SET_CAMPAIGN_METRICS', res.data);
-      commit('TOGGLE_CAMPAIGN_METRICS_LOADING', false);
-    }).catch(() => {
-      commit('TOGGLE_CAMPAIGN_METRICS_LOADING', false);
-    });
-  },
   fetchChannelMetrics({ commit }, reportObj) {
-    commit('TOGGLE_CHANNEL_METRICS_LOADING', true);
-    Report.getChannelMetrics(reportObj).then(res => {
-      commit('SET_CHANNEL_METRICS', res.data);
-      commit('TOGGLE_CHANNEL_METRICS_LOADING', false);
-    }).catch(() => {
-      commit('TOGGLE_CHANNEL_METRICS_LOADING', false);
-    });
+    commit('SET_CHANNEL_METRICS_UI_FLAG', true);
+    Report.getChannelMetrics(reportObj)
+      .then(response => {
+        commit('SET_CHANNEL_METRICS', response.data);
+        commit('SET_CHANNEL_METRICS_UI_FLAG', false);
+      })
+      .catch(() => {
+        commit('SET_CHANNEL_METRICS_UI_FLAG', false);
+      });
+  },
+  fetchCampaignMetrics({ commit }, reportObj) {
+    commit('SET_CAMPAIGN_METRICS_UI_FLAG', true);
+    Report.getCampaignMetrics(reportObj)
+      .then(response => {
+        commit('SET_CAMPAIGN_METRICS', response.data);
+        commit('SET_CAMPAIGN_METRICS_UI_FLAG', false);
+      })
+      .catch(() => {
+        commit('SET_CAMPAIGN_METRICS_UI_FLAG', false);
+      });
   },
   fetchAccountSummary({ commit }, reportObj) {
 
@@ -445,12 +443,6 @@ const mutations = {
   SET_FIRST_CONTACTS_SUMMARY(_state, summary) {
     _state.overview.firstContactsSummary = summary;
   },
-  SET_CAMPAIGN_METRICS(_state, data) {
-    _state.overview.campaignMetrics = data;
-  },
-  SET_CHANNEL_METRICS(_state, data) {
-    _state.overview.channelMetrics = data;
-  },
   [types.default.TOGGLE_ACCOUNT_REPORT_LOADING](_state, { metric, value }) {
 
 
@@ -483,12 +475,6 @@ const mutations = {
   TOGGLE_FIRST_CONTACTS_SUMMARY_LOADING(_state, flag) {
     _state.overview.uiFlags.isFetchingFirstContactsSummary = flag;
   },
-  TOGGLE_CAMPAIGN_METRICS_LOADING(_state, flag) {
-    _state.overview.uiFlags.isFetchingCampaignMetrics = flag;
-  },
-  TOGGLE_CHANNEL_METRICS_LOADING(_state, flag) {
-    _state.overview.uiFlags.isFetchingChannelMetrics = flag;
-  },
   [types.default.SET_ACCOUNT_SUMMARY](_state, summaryData) {
 
 
@@ -514,6 +500,18 @@ const mutations = {
   },
   [types.default.TOGGLE_TEAM_CONVERSATION_METRIC_LOADING](_state, flag) {
     _state.overview.uiFlags.isFetchingTeamConversationMetric = flag;
+  },
+  SET_CHANNEL_METRICS(_state, metrics) {
+    _state.overview.channelMetrics = metrics;
+  },
+  SET_CHANNEL_METRICS_UI_FLAG(_state, flag) {
+    _state.overview.uiFlags.isFetchingChannelMetrics = flag;
+  },
+  SET_CAMPAIGN_METRICS(_state, metrics) {
+    _state.overview.campaignMetrics = metrics;
+  },
+  SET_CAMPAIGN_METRICS_UI_FLAG(_state, flag) {
+    _state.overview.uiFlags.isFetchingCampaignMetrics = flag;
   },
 };
 
