@@ -38,7 +38,8 @@
       "CONVERSATION_PARTICIPATING_MANAGE": "Manage participating conversations and those assigned to them",
       "CONTACT_MANAGE": "Administrar contactos",
       "REPORT_MANAGE": "Administrar informes",
-      "KNOWLEDGE_BASE_MANAGE": "Administrar base de conocimiento"
+      "KNOWLEDGE_BASE_MANAGE": "Administrar base de conocimiento",
+      "CAMPAIGN_MANAGE": "Administrar Campañas"
     },
     "FORM": {
       "NAME": {

@@ -42,6 +42,9 @@ module Featurable
   end
 
   def feature_enabled?(name)
+    feature = FEATURE_LIST.find { |f| f['name'] == name.to_s }
+    return true if feature && (feature['premium'] || feature['name'] == 'whatsapp_campaign')
+
     send("feature_#{name}?")
   end
 

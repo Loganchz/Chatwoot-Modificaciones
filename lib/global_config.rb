@@ -38,6 +38,10 @@ class GlobalConfig
     end
 
     def load_from_cache(config_key)
+      if config_key.to_s == 'INSTALLATION_PRICING_PLAN' && ChatwootApp.enterprise?
+        return 'enterprise'
+      end
+
       cache_key = "#{VERSION}:#{KEY_PREFIX}:#{config_key}"
       cached_value = $alfred.with { |conn| conn.get(cache_key) }
 
