@@ -2,7 +2,15 @@ class Api::V1::Accounts::CannedResponsesController < Api::V1::Accounts::BaseCont
   before_action :fetch_canned_response, only: [:update, :destroy]
 
   def index
-    render json: canned_responses
+    @canned_responses = canned_responses.page(params[:page] || 1).per(15)
+    render json: {
+      payload: @canned_responses,
+      meta: {
+        currentPage: @canned_responses.current_page,
+        totalPages: @canned_responses.total_pages,
+        totalCount: @canned_responses.total_count
+      }
+    }
   end
 
   def create

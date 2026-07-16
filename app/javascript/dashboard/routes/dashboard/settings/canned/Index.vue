@@ -4,7 +4,7 @@ import AddCanned from './AddCanned.vue';
 import EditCanned from './EditCanned.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import { picoSearch } from '@scmmishra/pico-search';
@@ -12,6 +12,7 @@ import { useMessageFormatter } from 'shared/composables/useMessageFormatter';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
 import {
   BaseTable,
   BaseTableRow,
@@ -42,14 +43,23 @@ const records = computed(() =>
   getters.getSortedCannedResponses.value(sortOrder.value)
 );
 
-const filteredRecords = computed(() => {
-  const query = searchQuery.value.trim();
-  if (!query) return records.value;
-  return picoSearch(records.value, query, [
-    { name: 'short_code', weight: 4 },
-    'content',
-  ]);
+const filteredRecords = computed(() => records.value);
+const meta = computed(() => getters.getMeta.value);
+const currentPage = ref(1);
+
+let searchTimeout;
+watch(searchQuery, () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchCannedResponses();
+  }, 500);
 });
+
+watch(currentPage, () => {
+  fetchCannedResponses();
+});
+
 const uiFlags = computed(() => getters.getUIFlags.value);
 
 const deleteConfirmText = computed(
@@ -72,7 +82,7 @@ const toggleSort = () => {
 
 const fetchCannedResponses = async () => {
   try {
-    await store.dispatch('getCannedResponse');
+    await store.dispatch('getCannedResponse', { searchKey: searchQuery.value, page: currentPage.value });
   } catch (error) {
     // Ignore Error
   }
@@ -245,6 +255,16 @@ const tableHeaders = computed(() => {
           </BaseTableRow>
         </template>
       </BaseTable>
+
+      <div class="mt-4" v-if="meta.totalCount > 15">
+        <PaginationFooter
+          current-page-info="CONTACTS_LAYOUT.PAGINATION_FOOTER.SHOWING"
+          :current-page="currentPage"
+          :total-items="meta.totalCount"
+          :items-per-page="15"
+          @update:current-page="currentPage = $event"
+        />
+      </div>
     </template>
     <woot-modal v-model:show="showAddPopup" :on-close="hideAddPopup">
       <AddCanned :on-close="hideAddPopup" />

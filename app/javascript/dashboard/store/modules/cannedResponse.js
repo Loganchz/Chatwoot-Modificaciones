@@ -12,6 +12,11 @@ const state = {
     updatingItem: false,
     deletingItem: false,
   },
+  meta: {
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+  },
 };
 
 const getters = {
@@ -30,17 +35,21 @@ const getters = {
   getUIFlags(_state) {
     return _state.uiFlags;
   },
+  getMeta(_state) {
+    return _state.meta;
+  },
 };
 
 const actions = {
   getCannedResponse: async function getCannedResponse(
     { commit },
-    { searchKey } = {}
+    { searchKey, page } = {}
   ) {
     commit(types.default.SET_CANNED_UI_FLAG, { fetchingList: true });
     try {
-      const response = await CannedResponseAPI.get({ searchKey });
-      commit(types.default.SET_CANNED, response.data);
+      const response = await CannedResponseAPI.get({ searchKey, page });
+      commit(types.default.SET_CANNED, response.data.payload);
+      commit('SET_CANNED_META', response.data.meta);
       commit(types.default.SET_CANNED_UI_FLAG, { fetchingList: false });
     } catch (error) {
       commit(types.default.SET_CANNED_UI_FLAG, { fetchingList: false });
@@ -105,6 +114,9 @@ const mutations = {
   [types.default.ADD_CANNED]: MutationHelpers.create,
   [types.default.EDIT_CANNED]: MutationHelpers.update,
   [types.default.DELETE_CANNED]: MutationHelpers.destroy,
+  SET_CANNED_META(_state, meta) {
+    _state.meta = meta;
+  },
 };
 
 export default {

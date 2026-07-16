@@ -15,6 +15,7 @@ import {
   BaseTableRow,
   BaseTableCell,
 } from 'dashboard/components-next/table';
+import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
 
 const getters = useStoreGetters();
 const store = useStore();
@@ -29,13 +30,26 @@ const searchQuery = ref('');
 
 const records = computed(() => getters['labels/getLabels'].value);
 
-const filteredRecords = computed(() => {
+const currentPage = ref(1);
+const itemsPerPage = ref(15);
+
+const searchedRecords = computed(() => {
   const query = searchQuery.value.trim();
   if (!query) return records.value;
   return picoSearch(records.value, query, [
     { name: 'title', weight: 4 },
     'description',
   ]);
+});
+
+const filteredRecords = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return searchedRecords.value.slice(start, start + itemsPerPage.value);
+});
+
+import { watch } from 'vue';
+watch(searchQuery, () => {
+  currentPage.value = 1;
 });
 const uiFlags = computed(() => getters['labels/getUIFlags'].value);
 
@@ -187,6 +201,16 @@ onBeforeMount(() => {
           </BaseTableRow>
         </template>
       </BaseTable>
+
+      <div class="mt-4" v-if="searchedRecords.length > itemsPerPage">
+        <PaginationFooter
+          current-page-info="CONTACTS_LAYOUT.PAGINATION_FOOTER.SHOWING"
+          :current-page="currentPage"
+          :total-items="searchedRecords.length"
+          :items-per-page="itemsPerPage"
+          @update:current-page="currentPage = $event"
+        />
+      </div>
     </template>
 
     <woot-modal v-model:show="showAddPopup" :on-close="hideAddPopup">
