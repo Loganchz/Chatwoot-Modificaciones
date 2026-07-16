@@ -69,19 +69,6 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     render json: @report_data
   end
 
-  def campaign_metrics
-    builder = V2::Reports::CampaignMetricsBuilder.new(Current.account, Current.user, params)
-    render json: builder.build
-  end
-
-  def channel_metrics
-    builder = V2::Reports::ChannelSummaryBuilder.new(
-      account: Current.account,
-      params: { since: params[:since], until: params[:until] }
-    )
-    render json: builder.build
-  end
-
   def first_contacts_summary
     since_date = Time.zone.at(params[:since].to_i)
     until_date = Time.zone.at(params[:until].to_i)
@@ -99,6 +86,14 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
       contacts_count: contacts.count,
       conversations_count: conversations.count
     }
+  end
+
+  def channel_metrics
+    render json: V2::Reports::ChannelMetricsBuilder.new(Current.account, Current.user, params).build
+  end
+
+  def campaign_metrics
+    render json: V2::Reports::CampaignMetricsBuilder.new(Current.account, Current.user, params).build
   end
 
   def conversations

@@ -133,21 +133,22 @@ class ReportsAPI extends ApiClient {
     });
   }
 
-  getCampaignMetrics({ from, to, timezoneOffset } = {}) {
-    return axios.get(`${this.url}/campaign_metrics`, {
-      params: { 
-        since: from, 
-        until: to,
-        timezone_offset: timezoneOffset || getTimeOffset() 
-      },
-    });
-  }
-
   getChannelMetrics({ from, to } = {}) {
     return axios.get(`${this.url}/channel_metrics`, {
       params: { 
         since: from, 
-        until: to
+        until: to, 
+        timezone_offset: getTimeOffset() 
+      },
+    });
+  }
+
+  getCampaignMetrics({ from, to } = {}) {
+    return axios.get(`${this.url}/campaign_metrics`, {
+      params: { 
+        since: from, 
+        until: to, 
+        timezone_offset: getTimeOffset() 
       },
     });
   }

@@ -1,0 +1,42 @@
+FROM chatwoot/chatwoot:v4.15.1 AS builder
+
+# Instalar pnpm
+RUN apk add --no-cache curl \
+  && ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+  && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+  && npm install -g pnpm@10.2.0
+
+# Descargar dependencias frontend directamente desde la nube (GitHub oficial de Chatwoot)
+RUN curl -O https://raw.githubusercontent.com/chatwoot/chatwoot/v4.15.1/package.json \
+  && curl -O https://raw.githubusercontent.com/chatwoot/chatwoot/v4.15.1/pnpm-lock.yaml
+
+RUN pnpm install --frozen-lockfile
+
+# ==========================================
+# INYECCIÓN AUTOMATIZADA DE MODIFICACIONES
+# ==========================================
+# Copia toda la estructura espejo de una sola vez
+COPY todas-las-modificaciones/ /app/
+
+# Recompilar
+RUN SECRET_KEY_BASE=precompile_placeholder \
+  RAILS_LOG_TO_STDOUT=enabled \
+  NODE_OPTIONS="--max-old-space-size=8192 --openssl-legacy-provider" \
+  bundle exec rake assets:precompile
+
+# Limpiar
+RUN rm -rf node_modules tmp/cache spec .git
+
+# --- IMAGEN FINAL ---
+FROM chatwoot/chatwoot:v4.15.1
+
+COPY --from=builder /app/public/vite/ /app/public/vite/
+
+# ==========================================
+# INYECCIÓN AUTOMATIZADA FINAL
+# ==========================================
+# Vuelve a copiar las modificaciones (Backend/Ruby) a la imagen final
+COPY todas-las-modificaciones/ /app/
+
+WORKDIR /app
+EXPOSE 3000
