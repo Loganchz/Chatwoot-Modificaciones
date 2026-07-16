@@ -34,6 +34,7 @@ class AccountDashboard < Administrate::BaseDashboard
     locale: Field::Select.with_options(collection: LANGUAGES_CONFIG.map { |_x, y| y[:iso_639_1_code] }),
     status: Field::Select.with_options(collection: [%w[Active active], %w[Suspended suspended]]),
     account_users: Field::HasMany,
+    auto_verify_agents: Field::Boolean,
     custom_attributes: Field::String
   }.merge(enterprise_attribute_types).freeze
 
@@ -68,6 +69,7 @@ class AccountDashboard < Administrate::BaseDashboard
     updated_at
     locale
     status
+    auto_verify_agents
     conversations
     account_users
   ] + enterprise_show_page_attributes).freeze
@@ -87,6 +89,7 @@ class AccountDashboard < Administrate::BaseDashboard
     name
     locale
     status
+    auto_verify_agents
   ] + enterprise_form_attributes).freeze
 
   # COLLECTION_FILTERS

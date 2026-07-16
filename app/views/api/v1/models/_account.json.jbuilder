@@ -21,6 +21,7 @@ if resource.custom_attributes.present?
     if resource.custom_attributes['marked_for_deletion_reason'].present?
       json.marked_for_deletion_reason resource.custom_attributes['marked_for_deletion_reason']
     end
+    json.auto_verify_agents resource.custom_attributes['auto_verify_agents']
   end
 end
 json.domain @account.domain

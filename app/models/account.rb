@@ -48,6 +48,15 @@ class Account < ApplicationRecord
   validate :validate_reporting_timezone
   validate :validate_support_email_format, if: :will_save_change_to_support_email?
 
+  def auto_verify_agents
+    return false if custom_attributes.blank?
+    custom_attributes['auto_verify_agents'] == '1' || custom_attributes['auto_verify_agents'] == true
+  end
+
+  def auto_verify_agents=(value)
+    self.custom_attributes = (custom_attributes || {}).merge('auto_verify_agents' => (value == '1' || value == true))
+  end
+
   store_accessor :settings, :auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting
 
   store_accessor :settings, :audio_transcriptions, :auto_resolve_label

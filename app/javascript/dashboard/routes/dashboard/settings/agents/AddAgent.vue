@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
+import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import Button from 'dashboard/components-next/button/Button.vue';
 
 const emit = defineEmits(['close']);
@@ -14,6 +15,7 @@ const { t } = useI18n();
 
 const agentName = ref('');
 const agentEmail = ref('');
+const agentPassword = ref('');
 const selectedRoleId = ref('agent');
 
 const rules = {
@@ -30,6 +32,22 @@ const v$ = useVuelidate(rules, {
 
 const uiFlags = useMapGetter('agents/getUIFlags');
 const getCustomRoles = useMapGetter('customRole/getCustomRoles');
+const getCurrentAccount = useMapGetter('getCurrentAccount');
+
+const autoVerifyAgents = computed(
+  () => getCurrentAccount.value?.auto_verify_agents
+);
+
+onMounted(() => {
+  if (autoVerifyAgents.value) {
+    agentPassword.value = 'Chatwoot2016!';
+  }
+});
+
+const copyPassword = async () => {
+  await copyTextToClipboard(agentPassword.value);
+  useAlert('Contraseña copiada al portapapeles');
+};
 
 const roles = computed(() => {
   const defaultRoles = [
@@ -70,6 +88,10 @@ const addAgent = async () => {
       name: agentName.value,
       email: agentEmail.value,
     };
+
+    if (autoVerifyAgents.value) {
+      payload.password = agentPassword.value;
+    }
 
     if (selectedRole.value.name.startsWith('custom_')) {
       payload.custom_role_id = selectedRole.value.id;
@@ -144,6 +166,29 @@ const addAgent = async () => {
             :placeholder="$t('AGENT_MGMT.ADD.FORM.EMAIL.PLACEHOLDER')"
             @input="v$.agentEmail.$touch"
           />
+        </label>
+      </div>
+
+      <div v-if="autoVerifyAgents" class="w-full">
+        <label>
+          Contraseña Temporal
+          <div class="flex items-center gap-2 w-full">
+            <input
+              v-model="agentPassword"
+              type="text"
+              readonly
+              class="!mb-0 flex-1"
+              placeholder="Contraseña estándar"
+            />
+            <div class="flex-shrink-0">
+              <Button
+                label="Copiar!"
+                faded
+                colorScheme="secondary"
+                @click.prevent="copyPassword"
+              />
+            </div>
+          </div>
         </label>
       </div>
 

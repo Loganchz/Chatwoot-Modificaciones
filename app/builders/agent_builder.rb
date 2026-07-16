@@ -8,8 +8,9 @@ class AgentBuilder
   # @param role [String] the role of the user, defaults to 'agent' if not provided.
   # @param inviter [User] the user who is inviting the agent (Current.user in most cases).
   # @param availability [String] the availability status of the user, defaults to 'offline' if not provided.
+  # @param password [String] the password for the user, if provided.
   # @param auto_offline [Boolean] the auto offline status of the user.
-  pattr_initialize [:email, { name: '' }, :inviter, :account, { role: :agent }, { availability: :offline }, { auto_offline: false }]
+  pattr_initialize [:email, { name: '' }, :inviter, :account, { role: :agent }, { availability: :offline }, { auto_offline: false }, { password: nil }]
 
   # Creates a user and account user in a transaction.
   # @return [User] the created user.
@@ -30,8 +31,17 @@ class AgentBuilder
     return user if user
 
     @name = email.split('@').first if @name.blank?
-    temp_password = "1!aA#{SecureRandom.alphanumeric(12)}"
-    User.create!(email: email, name: @name, password: temp_password, password_confirmation: temp_password)
+    temp_password = password.presence || "1!aA#{SecureRandom.alphanumeric(12)}"
+    
+    user = User.new(email: email, name: @name, password: temp_password, password_confirmation: temp_password)
+    
+    # Auto-verify the user if the account has the setting enabled
+    if account.custom_attributes.present? && (account.custom_attributes['auto_verify_agents'] == '1' || account.custom_attributes['auto_verify_agents'] == true)
+      user.skip_confirmation!
+    end
+    
+    user.save!
+    user
   end
 
   # Checks if the user needs confirmation.
