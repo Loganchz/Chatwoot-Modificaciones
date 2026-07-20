@@ -83,6 +83,8 @@ const getValueFromConversation = (conversation, attributeKey) => {
       return conversation.inbox_id;
     case 'team_id':
       return conversation.meta?.team?.id;
+    case 'unread_messages':
+      return conversation.unread_count > 0;
     case 'browser_language':
     case 'referer':
       return conversation.additional_attributes?.[attributeKey];
