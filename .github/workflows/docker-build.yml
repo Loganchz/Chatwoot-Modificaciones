@@ -1,9 +1,7 @@
 name: Build and Push Docker Images
 
 on:
-  push:
-    branches:
-      - 'feat/v4.15.1/*'
+  workflow_dispatch:
 
 jobs:
   build-and-push:

@@ -68,7 +68,11 @@ module Filters::FilterHelper
     when 'text_case_insensitive'
       text_case_insensitive_filter(query_hash, filter_operator_value)
     else
-      default_filter(query_hash, filter_operator_value)
+      if query_hash['attribute_key'] == 'unread_messages'
+        unread_messages_filter(query_hash, current_index)
+      else
+        default_filter(query_hash, filter_operator_value)
+      end
     end
   end
 
@@ -84,6 +88,20 @@ module Filters::FilterHelper
 
   def default_filter(query_hash, filter_operator_value)
     "#{filter_config[:table_name]}.#{query_hash[:attribute_key]} #{filter_operator_value} #{query_hash[:query_operator]}"
+  end
+
+  def unread_messages_filter(query_hash, current_index)
+    Rails.logger.info("UNREAD MESSAGES QUERY HASH: #{query_hash.inspect}")
+    is_true = query_hash['values'][0].to_s.downcase == 'true'
+    
+    # We use a subquery to find if the conversation has unread incoming messages
+    subquery = "SELECT 1 FROM messages WHERE messages.conversation_id = conversations.id AND messages.account_id = conversations.account_id AND messages.message_type = 0 AND (conversations.agent_last_seen_at IS NULL OR messages.created_at > conversations.agent_last_seen_at)"
+    
+    if is_true
+      "EXISTS (#{subquery}) #{query_hash[:query_operator]}"
+    else
+      "NOT EXISTS (#{subquery}) #{query_hash[:query_operator]}"
+    end
   end
 
   def validate_single_condition(condition)

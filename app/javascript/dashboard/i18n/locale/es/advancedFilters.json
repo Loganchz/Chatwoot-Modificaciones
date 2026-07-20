@@ -46,6 +46,7 @@
     },
     "ATTRIBUTES": {
       "STATUS": "Estado",
+      "UNREAD_MESSAGES": "Mensajes no leídos",
       "ASSIGNEE_NAME": "Nombre Asignado",
       "INBOX_NAME": "Nombre de la bandeja de entrada",
       "TEAM_NAME": "Nombre del equipo",

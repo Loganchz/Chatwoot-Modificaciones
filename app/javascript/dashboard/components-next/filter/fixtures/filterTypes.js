@@ -32,6 +32,31 @@ export const filterTypes = [
     attributeModel: 'standard',
   },
   {
+    attributeKey: 'unread_messages',
+    value: 'unread_messages',
+    attributeName: 'Unread messages',
+    label: 'Unread messages',
+    inputType: 'booleanSelect',
+    filterOperators: [
+      {
+        value: 'equal_to',
+        label: 'Equal to',
+        hasInput: true,
+        inputOverride: null,
+        icon: 'i-ph-equals-bold',
+      },
+      {
+        value: 'not_equal_to',
+        label: 'Not equal to',
+        hasInput: true,
+        inputOverride: null,
+        icon: 'i-ph-not-equals-bold',
+      },
+    ],
+    options: [],
+    attributeModel: 'standard',
+  },
+  {
     attributeKey: 'assignee_id',
     value: 'assignee_id',
     attributeName: 'Assignee name',

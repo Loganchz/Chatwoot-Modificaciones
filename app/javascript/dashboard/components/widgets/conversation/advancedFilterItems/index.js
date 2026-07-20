@@ -15,6 +15,14 @@ const filterTypes = [
     attributeModel: 'standard',
   },
   {
+    attributeKey: 'unread_messages',
+    attributeI18nKey: 'UNREAD_MESSAGES',
+    inputType: 'plain_text',
+    dataType: 'boolean',
+    filterOperators: OPERATOR_TYPES_1,
+    attributeModel: 'standard',
+  },
+  {
     attributeKey: 'assignee_id',
     attributeI18nKey: 'ASSIGNEE_NAME',
     inputType: 'search_select',
