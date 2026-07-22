@@ -43,10 +43,13 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def export
-    column_names = params['column_names']
-    filter_params = { :payload => params.permit!['payload'], :label => params.permit!['label'] }
-    Account::ContactsExportJob.perform_later(Current.account.id, Current.user.id, column_names, filter_params)
-    head :ok, message: I18n.t('errors.contacts.export.success')
+    filter_params = params.permit!.to_h.with_indifferent_access
+    csv_data = Contacts::ExportService.new(Current.account, filter_params).perform
+    
+    bom = "\xEF\xBB\xBF"
+    send_data bom + csv_data, 
+              filename: "#{Current.account.name}_#{Current.account.id}_contacts.csv", 
+              type: 'text/csv'
   end
 
   # returns online contacts

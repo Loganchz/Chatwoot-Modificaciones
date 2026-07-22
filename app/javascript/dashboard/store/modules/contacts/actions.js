@@ -192,7 +192,25 @@ export const actions = {
   export: async ({ commit }, { payload, label }) => {
     commit(types.SET_CONTACT_UI_FLAG, { isExporting: true });
     try {
-      await ContactAPI.exportContacts({ payload, label });
+      const response = await ContactAPI.exportContacts({ payload, label });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const disposition = response.headers['content-disposition'];
+      let filename = 'contacts.csv';
+      if (disposition && disposition.indexOf('attachment') !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) { 
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       commit(types.SET_CONTACT_UI_FLAG, { isExporting: false });
     } catch (error) {

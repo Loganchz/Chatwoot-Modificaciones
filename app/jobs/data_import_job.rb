@@ -47,11 +47,18 @@ class DataImportJob < ApplicationJob
   def build_contact_from_row(row, contacts, rejected_contacts)
     row_hash = row.to_h.with_indifferent_access
     labels = extract_labels(row_hash)
-    invalid_labels = labels.map(&:downcase) - approved_labels
+    invalid_labels = labels.map(&:downcase) - approved_labels.map(&:downcase)
 
     if invalid_labels.present?
-      append_label_error(row, invalid_labels, rejected_contacts)
-      return
+      invalid_labels.each do |title|
+        # Auto-create label if it doesn't exist
+        @data_import.account.labels.find_or_create_by!(title: title) do |label|
+          label.description = "Etiqueta creada automáticamente desde importación CSV"
+          label.show_on_sidebar = true
+        end
+      end
+      # Clear the memoized cache so it re-fetches
+      @approved_labels = nil
     end
 
     current_contact = @contact_manager.build_contact(row_hash.except(:labels))
@@ -79,6 +86,16 @@ class DataImportJob < ApplicationJob
   end
 
   def apply_labels_to_contacts(contacts_with_labels)
+    # Option A: Overwrite labels. We clear existing taggings for these contacts first.
+    contact_ids = contacts_with_labels.map { |item| contact_for_label_import(item[:contact])&.id }.compact
+    if contact_ids.present?
+      ActsAsTaggableOn::Tagging.where(
+        taggable_type: CONTACT_TAGGABLE_TYPE,
+        taggable_id: contact_ids,
+        context: LABELS_CONTEXT
+      ).delete_all
+    end
+
     taggings = taggings_for_contacts(contacts_with_labels)
     return if taggings.blank?
 
@@ -182,6 +199,13 @@ class DataImportJob < ApplicationJob
 
   def send_import_notification_to_admin
     AdministratorNotifications::AccountNotificationMailer.with(account: @data_import.account).contact_import_complete(@data_import).deliver_later
+
+    # Broadcast event to frontend so they don't have to hit F5 manually
+    ::ActionCableBroadcastJob.perform_later(
+      ["account_#{@data_import.account_id}"],
+      'contact.import_completed',
+      { account_id: @data_import.account_id }
+    )
   end
 
   def send_import_failed_notification_to_admin
@@ -202,8 +226,15 @@ class DataImportJob < ApplicationJob
     utf8_data = raw_data.force_encoding('UTF-8')
     clean_data = utf8_data.valid_encoding? ? utf8_data : utf8_data.encode('UTF-16le', invalid: :replace, replace: '').encode('UTF-8')
     clean_data = clean_data.delete_prefix("\xEF\xBB\xBF")
+    
+    # Ignorar la directiva sep=, o sep=; que a veces agrega Excel o nuestro Exportador
+    clean_data = clean_data.sub(/^sep=[,;]\r?\n/i, '')
 
-    CSV.new(StringIO.new(clean_data), headers: true)
+    # Auto-detectar separador (coma vs punto y coma) según la primera línea
+    first_line = clean_data.split("\n", 2).first.to_s
+    separator = first_line.count(';') > first_line.count(',') ? ';' : ','
+
+    CSV.new(StringIO.new(clean_data), headers: true, col_sep: separator)
   end
 
   def with_import_file

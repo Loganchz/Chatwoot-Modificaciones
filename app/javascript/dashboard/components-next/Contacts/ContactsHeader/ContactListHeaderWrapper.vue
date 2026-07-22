@@ -11,6 +11,7 @@ import {
   DuplicateContactException,
   ExceptionWithMessage,
 } from 'shared/helpers/CustomErrors';
+import { emitter } from 'shared/helpers/mitt';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
 import countries from 'shared/constants/countries';
 import {
@@ -110,6 +111,7 @@ const onImport = async file => {
     useAlert(
       t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.SUCCESS_MESSAGE')
     );
+    emitter.emit('contact_import_started');
     useTrack(CONTACTS_EVENTS.IMPORT_SUCCESS);
   } catch (error) {
     useAlert(

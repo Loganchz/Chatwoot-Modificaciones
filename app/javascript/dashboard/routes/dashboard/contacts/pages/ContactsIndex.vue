@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed, ref, reactive, watch } from 'vue';
+import { onMounted, onUnmounted, computed, ref, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
@@ -7,6 +7,7 @@ import { useAlert } from 'dashboard/composables';
 import { debounce } from '@chatwoot/utils';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import filterQueryGenerator from 'dashboard/helper/filterQueryGenerator';
+import { emitter } from 'shared/helpers/mitt';
 
 import ContactsListLayout from 'dashboard/components-next/Contacts/ContactsListLayout.vue';
 import ContactEmptyState from 'dashboard/components-next/Contacts/EmptyState/ContactEmptyState.vue';
@@ -60,8 +61,9 @@ const sortState = reactive({
 
 const activeLabel = computed(() => route.params.label);
 const activeSegmentId = computed(() => route.params.segmentId);
+const isBackgroundImporting = ref(false);
 const isFetchingList = computed(
-  () => uiFlags.value.isFetching || customViewsUiFlags.value.isFetching
+  () => uiFlags.value.isFetching || customViewsUiFlags.value.isFetching || isBackgroundImporting.value
 );
 const currentPage = computed(() => Number(meta.value?.currentPage));
 const totalItems = computed(() => meta.value?.count);
@@ -396,6 +398,11 @@ const deleteContacts = async () => {
   }
 };
 
+onUnmounted(() => {
+  emitter.off('contact_import_started', onImportStarted);
+  emitter.off('contact_import_completed', reloadContactsAfterImport);
+});
+
 const handleSort = async ({ sort, order }) => {
   Object.assign(sortState, { activeSort: sort, activeOrdering: order });
 
@@ -470,7 +477,19 @@ watch(searchQuery, value => {
   }
 });
 
+const onImportStarted = () => {
+  isBackgroundImporting.value = true;
+};
+
+const reloadContactsAfterImport = () => {
+  isBackgroundImporting.value = false;
+  fetchContactsBasedOnContext(pageNumber.value, { clearSelection: false });
+};
+
 onMounted(async () => {
+  emitter.on('contact_import_started', onImportStarted);
+  emitter.on('contact_import_completed', reloadContactsAfterImport);
+
   if (!activeSegmentId.value) {
     if (searchQuery.value) {
       await searchContacts(searchQuery.value, pageNumber.value, false, {
@@ -521,7 +540,19 @@ onMounted(async () => {
       @load-more="loadMoreSearchResults"
     >
       <div
-        v-if="isFetchingList && !(isSearchView && hasContacts)"
+        v-if="isBackgroundImporting"
+        class="flex flex-col items-center justify-center py-20 space-y-4"
+      >
+        <div class="text-base font-medium text-green-600">
+          Importando contactos, por favor espera...
+        </div>
+        <div class="w-64 h-2 overflow-hidden bg-green-100 rounded-full">
+          <div class="h-full bg-green-500 rounded-full loading-bar"></div>
+        </div>
+      </div>
+
+      <div
+        v-else-if="isFetchingList && !(isSearchView && hasContacts)"
         class="flex items-center justify-center py-10 text-n-slate-11"
       >
         <Spinner />
@@ -578,3 +609,15 @@ onMounted(async () => {
     </ContactsListLayout>
   </div>
 </template>
+
+<style scoped>
+.loading-bar {
+  animation: indeterminate 1.5s infinite linear;
+  transform-origin: 0% 50%;
+}
+@keyframes indeterminate {
+  0% { transform: translateX(-100%) scaleX(0.2); }
+  50% { transform: translateX(0) scaleX(0.5); }
+  100% { transform: translateX(100%) scaleX(0.2); }
+}
+</style>

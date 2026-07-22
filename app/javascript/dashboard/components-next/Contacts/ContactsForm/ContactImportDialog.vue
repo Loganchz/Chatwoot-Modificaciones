@@ -93,6 +93,7 @@ defineExpose({ dialogRef });
           </span>
           <Button
             v-if="!hasSelectedFile"
+            type="button"
             :label="
               t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CHOOSE_FILE')
             "
@@ -105,6 +106,7 @@ defineExpose({ dialogRef });
           />
           <div v-else class="flex items-center gap-1">
             <Button
+              type="button"
               :label="t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CHANGE')"
               color="slate"
               variant="ghost"
@@ -113,6 +115,7 @@ defineExpose({ dialogRef });
             />
             <div class="w-px h-3 bg-n-strong" />
             <Button
+              type="button"
               icon="i-lucide-trash"
               color="slate"
               variant="ghost"
